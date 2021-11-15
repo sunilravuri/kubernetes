@@ -1,0 +1,126 @@
+global:
+  resolve_timeout: 5m
+receivers:
+  - name: 'null'
+  - slack_configs:
+      - send_resolved: false
+        text: '{{ template "slack.text" . }}'
+        color: '{{ template "slack.color" . }}'
+        title: '{{ template "slack.title" . }}'
+        api_url: >-
+          https://hooks.slack.com/services/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
+        http_config: {}
+    email_configs:
+      - send_resolved: false
+        require_tls: false
+        to: DL_SiebelPlatformSupport@aa.com
+        from: prodsparancher@aa.com
+        smarthost: 'smtpdc.aa.com:25'
+        auth_username: Z2106004
+        auth_password: t7+whmefigky
+        html: '{{ template "email.default.html" . }}'
+      - send_resolved: false
+        require_tls: false
+        to: ventana_monitoring@dxc.com
+        smarthost: 'smtpdc.aa.com:25'
+        auth_username: Z2106004
+        from: prodsparancher@aa.com
+        auth_password: t7+whmefigky
+        html: '{{ template "email.default.html" . }}'
+    pagerduty_configs: []
+    opsgenie_configs: []
+    webhook_configs: []
+    name: Slack-Email
+  - slack_configs:
+      - http_config: {}
+        send_resolved: false
+        text: '{{ template "slack.text" . }}'
+        color: '{{ template "slack.color" . }}'
+        title: '{{ template "slack.title" . }}'
+        api_url: >-
+          https://hooks.slack.com/services/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
+    email_configs:
+      - send_resolved: false
+        require_tls: false
+        to: DL_SiebelPlatformK8sClusterAdmins@aa.com
+        from: prodsparancher@aa.com
+        smarthost: 'smtpdc.aa.com:25'
+        auth_username: Z2106004
+        auth_password: t7+whmefigky
+    pagerduty_configs: []
+    opsgenie_configs: []
+    webhook_configs: []
+    name: Slack-Email-ClusterAlerts
+  - slack_configs:
+      - http_config: {}
+        send_resolved: false
+        text: '{{ template "slack.text" . }}'
+        color: '{{ template "slack.color" . }}'
+        title: '{{ template "slack.title" . }}'
+        api_url: >-
+          https://hooks.slack.com/services/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
+    email_configs:
+      - send_resolved: false
+        require_tls: false
+        to: aiops.prod@aa.com
+        from: prodsparancher@aa.com
+        smarthost: 'smtpdc.aa.com:25'
+        auth_username: Z2106004
+        auth_password: t7+whmefigky
+        html: '{{ template "email.default.html" . }}'
+      - send_resolved: false
+        require_tls: false
+        to: DL_SiebelPlatformSupport@aa.com
+        auth_password: t7+whmefigky
+        from: prodsparancher@aa.com
+        smarthost: 'smtpdc.aa.com:25'
+        auth_username: Z2106004
+        html: '{{ template "email.default.html" . }}'
+      - send_resolved: false
+        require_tls: false
+        from: prodsparancher@aa.com
+        smarthost: 'smtpdc.aa.com:25'
+        auth_username: Z2106004
+        to: ventana_monitoring@dxc.com
+        auth_password: t7+whmefigky
+    pagerduty_configs: []
+    opsgenie_configs: []
+    webhook_configs: []
+    name: Moogsoft
+route:
+  group_by:
+    - job
+  group_interval: 5m
+  group_wait: 30s
+  receiver: 'null'
+  repeat_interval: 12h
+  routes:
+    - group_by:
+        - PodStatus
+      group_wait: 60s
+      group_interval: 60s
+      repeat_interval: 300s
+      match:
+        type: pod
+      match_re: {}
+      receiver: Slack-Email
+    - group_by:
+        - PodStatus
+      group_wait: 60s
+      group_interval: 60s
+      repeat_interval: 300s
+      match:
+        type: node
+      match_re: {}
+      receiver: Slack-Email-ClusterAlerts
+    - group_by:
+        - moogsoft
+      group_wait: 60s
+      group_interval: 60s
+      repeat_interval: 300s
+      match:
+        type: moogsoft
+      match_re: {}
+      receiver: Moogsoft
+templates:
+  - /etc/alertmanager/config/custom.tmpl
