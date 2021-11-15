@@ -21,7 +21,7 @@ spec:
       color: '{{ template "slack.color" . }}'
       title: '{{ template "slack.title" . }}'
       api_url: >-
-        https://hooks.slack.com/services/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
+        https://hooks.slack.com/services/T03QR2PHH/
       http_config: {}
 #    - text: string
 #      api_url: string
