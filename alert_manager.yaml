@@ -8,7 +8,7 @@ receivers:
         color: '{{ template "slack.color" . }}'
         title: '{{ template "slack.title" . }}'
         api_url: >-
-          https://hooks.slack.com/services/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
+          https://hooks.slack.com/services/
         http_config: {}
     email_configs:
       - send_resolved: false
@@ -38,7 +38,7 @@ receivers:
         color: '{{ template "slack.color" . }}'
         title: '{{ template "slack.title" . }}'
         api_url: >-
-          https://hooks.slack.com/services/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
+          https://hooks.slack.com/services/
     email_configs:
       - send_resolved: false
         require_tls: false
@@ -58,7 +58,7 @@ receivers:
         color: '{{ template "slack.color" . }}'
         title: '{{ template "slack.title" . }}'
         api_url: >-
-          https://hooks.slack.com/services/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
+          https://hooks.slack.com/services/
     email_configs:
       - send_resolved: false
         require_tls: false
