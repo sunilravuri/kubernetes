@@ -1,0 +1,14 @@
+spec:
+  receiver: Moogsoft
+  group_by:
+    - moogsoft
+#    - string
+  group_wait: 60s
+  group_interval: 60s
+  repeat_interval: 300s
+  match:
+    type: moogsoft
+#    key: string
+  match_re:
+    {}
+#    key: string

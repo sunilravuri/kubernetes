@@ -1,0 +1,61 @@
+spec:
+  name: Slack-Email
+  email_configs:
+    - send_resolved: false
+      require_tls: false
+      to: DL_SiebelPlatformSupport@aa.com
+      from: prodsparancher@aa.com
+      smarthost: 'smtpdc.aa.com:25'
+      auth_username: Z2106004
+      auth_password: t7+whmefigky
+      html: '{{ template "email.default.html" . }}'
+    - send_resolved: false
+      require_tls: false
+      to: ventana_monitoring@dxc.com
+      smarthost: 'smtpdc.aa.com:25'
+      auth_username: Z2106004
+      from: prodsparancher@aa.com
+      auth_password: t7+whmefigky
+      html: '{{ template "email.default.html" . }}'
+#    - to: string
+#      send_resolved: boolean
+#      from: string
+#      smarthost: string
+#      require_tls: boolean
+#      auth_username: string
+#      auth_password: string
+  slack_configs:
+    - send_resolved: false
+      text: '{{ template "slack.text" . }}'
+      color: '{{ template "slack.color" . }}'
+      title: '{{ template "slack.title" . }}'
+      api_url: >-
+        https://hooks.slack.com/services/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
+      http_config: {}
+#    - text: string
+#      api_url: string
+#      channel: string
+#      http_config:
+#        proxy_url: string
+#      send_resolved: boolean
+  pagerduty_configs:
+#    - routing_key: string
+#      service_key: string
+#      http_config:
+#        proxy_url: string
+#      send_resolved: boolean
+  opsgenie_configs:
+#    - api_key: string
+#      http_config:
+#        proxy_url: string
+#      send_resolved: boolean
+#      responders:
+#        - type: string
+#          id: string
+#          name: string
+#          username: string
+  webhook_configs:
+#    - url: string
+#      http_config:
+#        proxy_url: string
+#      send_resolved: boolean

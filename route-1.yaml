@@ -1,0 +1,14 @@
+spec:
+  receiver: Slack-Email-ClusterAlerts
+  group_by:
+    - PodStatus
+#    - string
+  group_wait: 60s
+  group_interval: 60s
+  repeat_interval: 300s
+  match:
+    type: node
+#    key: string
+  match_re:
+    {}
+#    key: string
