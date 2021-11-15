@@ -3,8 +3,8 @@ kind: PrometheusRule
 metadata:
   annotations:
     prometheus-operator-validated: "true"
-  creationTimestamp: "2021-06-08T04:05:07Z"
-  generation: 21
+  creationTimestamp: "2021-11-02T05:26:15Z"
+  generation: 7
   managedFields:
   - apiVersion: monitoring.coreos.com/v1
     fieldsType: FieldsV1
@@ -18,34 +18,20 @@ metadata:
         f:groups: {}
     manager: agent
     operation: Update
-    time: "2021-06-08T04:05:07Z"
+    time: "2021-10-13T18:36:53Z"
   name: custom-monitoring
-  namespace: mdev-siebel
-  resourceVersion: "22437548"
-  selfLink: /apis/monitoring.coreos.com/v1/namespaces/mdev-siebel/prometheusrules/custom-monitoring
-  uid: 195e87ac-c645-4051-9296-6b342a1cd3b6
+  namespace: prod-siebel
+  resourceVersion: "24570577"
+  selfLink: /apis/monitoring.coreos.com/v1/namespaces/prod-siebel/prometheusrules/custom-monitoring
+  uid: 08787efb-30f6-45c6-afd6-733f20053c6e
 spec:
   groups:
   - name: PodStatus
     rules:
-    - alert: KubePodNotReady
-      annotations:
-        description: Pod {{ $labels.namespace }}/{{ $labels.pod }} has been in a non-ready
-          state for longer than 15 minutes.
-        runbook_url: https://sparancher.aa.com
-        summary: Pod has been in a non-ready state for more than 15 minutes.
-        type: pod
-      expr: sum by(namespace, pod) (max by(namespace, pod) (kube_pod_status_phase{job="kube-state-metrics",namespace=~".*",phase=~"Pending|Unknown"})
-        * on(namespace, pod) group_left(owner_kind) topk by(namespace, pod) (1, max
-        by(namespace, pod, owner_kind) (kube_pod_owner{owner_kind!="Job"}))) > 0
-      for: 300s
-      labels:
-        severity: critical
-        type: pod
     - alert: KubeDeploymentReplicasMismatch
       annotations:
         description: Deployment {{ $labels.namespace }}/{{ $labels.deployment }} has
-          not matched the expected number of replicas for longer than 15 minutes.
+          not matched the expected number of replicas for longer than 5 minutes.
         runbook_url: http://sparancher.aa.com
         summary: Deployment has not matched the expected number of replicas.
       expr: (kube_deployment_spec_replicas{job="kube-state-metrics",namespace=~".*"}
@@ -59,7 +45,7 @@ spec:
     - alert: KubeStatefulSetReplicasMismatch
       annotations:
         description: StatefulSet {{ $labels.namespace }}/{{ $labels.statefulset }}
-          has not matched the expected number of replicas for longer than 15 minutes.
+          has not matched the expected number of replicas for longer than 5 minutes.
         runbook_url: http://sparancher.aa.com
         summary: Deployment has not matched the expected number of replicas.
       expr: (kube_statefulset_status_replicas_ready{job="kube-state-metrics",namespace=~".*"}
@@ -70,18 +56,6 @@ spec:
       labels:
         severity: warning
         type: pod
-    - alert: KubeContainerWaiting
-      annotations:
-        description: Pod {{ $labels.namespace }}/{{ $labels.pod }} container {{ $labels.container}}
-          has been in waiting state for longer than 1 hour.
-        runbook_url: http://sparancher.aa.com
-        summary: Pod container waiting longer than 1 hour
-      expr: sum by(namespace, pod, container) (kube_pod_container_status_waiting_reason{job="kube-state-metrics",namespace=~".*"})
-        > 0
-      for: 300s
-      labels:
-        severity: critical
-        type: pod
     - alert: CPUThrottlingHigh
       annotations:
         description: '{{ $value | humanizePercentage }} throttling of CPU in namespace
@@ -91,7 +65,7 @@ spec:
         summary: Processes experience elevated CPU throttling.
       expr: sum by(container, pod, namespace) (increase(container_cpu_cfs_throttled_periods_total{container!=""}[10m]))
         / sum by(container, pod, namespace) (increase(container_cpu_cfs_periods_total[5m]))
-        > (25 / 100)
+        > (80 / 100)
       for: 300s
       labels:
         severity: warning
@@ -104,7 +78,7 @@ spec:
       expr: '  delta(kube_pod_container_status_restarts_total[5m]) > 1'
       for: 300s
       labels:
-        severity: none
+        severity: critical
         type: pod
     - alert: ContainerMemoryUsage
       annotations:
@@ -112,18 +86,30 @@ spec:
         summary: Container Memory usage (instance {{ $labels.instance }})
       expr: (sum(container_memory_working_set_bytes) BY (instance, pod, namespace)
         / sum(container_spec_memory_limit_bytes > 0) BY (instance, pod) * 100) > 80
-      for: 2m
+      for: 300s
       labels:
         severity: warning
         type: pod
-    - alert: PodRestarted
+    - alert: CPUThrottlingVeryHigh
       annotations:
-        description: '"Pod {{ $labels.pod_name }} , container {{ $labels.container_name
-          }} restarted more than once in last 5 minutes'
-        summary: Pod restarted
-      expr: "kube_pod_container_status_last_terminated_reason{namespace=~\"mdev-siebel-soa|mdev-siebel|mtest-siebel|mtest-siebel-soa\"}
-        == 1 \n    and on(container) rate(kube_pod_container_status_restarts_total[5m])
-        * 300 > 1"
-      for: 120s
+        description: '{{ $value | humanizePercentage }} throttling of CPU in namespace
+          {{ $labels.namespace }} for container {{ $labels.container }} in pod {{
+          $labels.pod }}.'
+        summary: Processes experience elevated CPU throttling.
+      expr: sum by(container, pod, namespace) (increase(container_cpu_cfs_throttled_periods_total{container!=""}[10m]))
+        / sum by(container, pod, namespace) (increase(container_cpu_cfs_periods_total[5m]))
+        > (90 / 100)
+      for: 300s
       labels:
         severity: critical
+        type: pod
+    - alert: ContainerMemoryUsageHigh
+      annotations:
+        description: '"Container Memory usage is above 80%\n  VALUE = {{ $value }}"'
+        summary: Container Memory usage (instance {{ $labels.instance }})
+      expr: (sum(container_memory_working_set_bytes) BY (instance, pod, namespace)
+        / sum(container_spec_memory_limit_bytes > 0) BY (instance, pod) * 100) > 90
+      for: 300s
+      labels:
+        severity: critical
+        type: pod

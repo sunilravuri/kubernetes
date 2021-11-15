@@ -1,0 +1,113 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  creationTimestamp: "2021-11-02T21:17:25Z"
+  generation: 2
+  managedFields:
+  - apiVersion: monitoring.coreos.com/v1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:spec:
+        .: {}
+        f:groups: {}
+    manager: agent
+    operation: Update
+    time: "2021-11-02T21:17:25Z"
+  name: nodestatus
+  namespace: default
+  resourceVersion: "24526869"
+  selfLink: /apis/monitoring.coreos.com/v1/namespaces/default/prometheusrules/nodestatus
+  uid: ee19b8ad-4ddd-4668-8949-3a7e476e8520
+spec:
+  groups:
+  - name: nodestatus
+    rules:
+    - alert: KubeNodeNotReady
+      annotations:
+        description: '{{ $labels.node }} has been unready for more than 2 minutes.'
+        runbook_url: https://sparancher.aa.com
+        summary: Node is not ready
+      expr: ' kube_node_status_condition{condition="Ready",job="kube-state-metrics",status="true"}
+        == 0'
+      for: 120s
+      labels:
+        category: moogsoft
+        severity: critical
+        type: node
+    - alert: KubeNodeUnreachable
+      annotations:
+        description: '{{ $labels.node }} is unreachable and some workloads may be
+          rescheduled.'
+        runbook_url: https://sparancher.aa.com
+        summary: Node is unreachable.
+      expr: (kube_node_spec_taint{effect="NoSchedule",job="kube-state-metrics",key="node.kubernetes.io/unreachable"}
+        unless ignoring(key, value) kube_node_spec_taint{job="kube-state-metrics",key=~"ToBeDeletedByClusterAutoscaler|cloud.google.com/impending-node-termination|aws-node-termination-handler/spot-itn"})
+        == 1
+      for: 120s
+      labels:
+        category: moogsoft
+        severity: critical
+        type: node
+    - alert: KubeletTooManyPods
+      annotations:
+        description: Kubelet '{{ $labels.node }}' is running at {{ $value | humanizePercentage
+          }} of its Pod capacity.
+        runbook_url: https://sparancher.aa.com
+        summary: ' Kubelet is running at capacity.'
+      expr: ' count by(node) ((kube_pod_status_phase{job="kube-state-metrics",phase="Running"}
+        == 1) * on(instance, pod, namespace, cluster) group_left(node) topk by(instance,
+        pod, namespace, cluster) (1, kube_pod_info{job="kube-state-metrics"})) / max
+        by(node) (kube_node_status_capacity_pods{job="kube-state-metrics"} != 1) >
+        0.95'
+      for: 120s
+      labels:
+        severity: warning
+        type: node
+    - alert: NodeFilesystemSpaceFillingUp
+      annotations:
+        description: Filesystem on {{ $labels.device }} at {{ $labels.instance }}
+          has only {{ printf "%.2f" $value }}% available space left and is filling
+          up.
+        summary: Filesystem is predicted to run out of space within the next 24 hours.
+      expr: (node_filesystem_avail_bytes{fstype!="",job="node-exporter"} / node_filesystem_size_bytes{fstype!="",job="node-exporter"}
+        * 100 < 40 and predict_linear(node_filesystem_avail_bytes{fstype!="",job="node-exporter"}[6h],
+        24 * 60 * 60) < 0 and node_filesystem_readonly{fstype!="",job="node-exporter"}
+        == 0)
+      for: 120s
+      labels:
+        severity: critical
+        type: node
+    - alert: NodeFilesystemAlmostOutOfSpace
+      annotations:
+        description: Filesystem on {{ $labels.device }} at {{ $labels.instance }}
+          has only {{ printf "%.2f" $value }}% available space left.
+        summary: Filesystem has less than 3% space left.
+      expr: (node_filesystem_avail_bytes{fstype!="",job="node-exporter"} / node_filesystem_size_bytes{fstype!="",job="node-exporter"}
+        * 100 < 3 and node_filesystem_readonly{fstype!="",job="node-exporter"} ==
+        0)
+      for: 120s
+      labels:
+        category: moogsoft
+        severity: critical
+        type: node
+    - alert: HostOutOfMemory
+      annotations:
+        description: '"Node memory is filling up (< 10% left)\n  VALUE = {{ $value
+          }}\n  LABELS = {{ $labels }}"'
+        summary: Host out of memory (instance {{ $labels.instance }})
+      expr: node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes * 100 < 10
+      for: 60s
+      labels:
+        category: moogsoft
+        severity: critical
+        type: node
+    - alert: HostMemoryUnderMemoryPressure
+      annotations:
+        description: '"The node is under heavy memory pressure. High rate of major
+          page faults\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"'
+        summary: Host memory under memory pressure (instance {{ $labels.instance }})
+      expr: rate(node_vmstat_pgmajfault[1m]) > 1000
+      for: 120s
+      labels:
+        severity: warning
+        type: node

@@ -1,0 +1,82 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  creationTimestamp: "2021-11-12T17:18:45Z"
+  generation: 3
+  managedFields:
+  - apiVersion: monitoring.coreos.com/v1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:spec:
+        .: {}
+        f:groups: {}
+    manager: agent
+    operation: Update
+    time: "2021-11-12T17:18:45Z"
+  name: moogsoft
+  namespace: default
+  resourceVersion: "24571073"
+  selfLink: /apis/monitoring.coreos.com/v1/namespaces/default/prometheusrules/moogsoft
+  uid: dfaca703-431b-402b-b7e6-2be5e2c3e984
+spec:
+  groups:
+  - name: moogsoft
+    rules:
+    - alert: KubeNodeNotReady
+      annotations:
+        description: '{{ $labels.node }} has been unready for more than 2 minutes.'
+        runbook_url: https://sparancher.aa.com
+        summary: Node is not ready
+      expr: ' kube_node_status_condition{condition="Ready",job="kube-state-metrics",status="true"}
+        == 0'
+      for: 120s
+      labels:
+        severity: critical
+        type: moogsoft
+    - alert: KubeNodeUnreachable
+      annotations:
+        description: '{{ $labels.node }} is unreachable and some workloads may be
+          rescheduled.'
+        runbook_url: https://sparancher.aa.com
+        summary: Node is unreachable.
+      expr: (kube_node_spec_taint{effect="NoSchedule",job="kube-state-metrics",key="node.kubernetes.io/unreachable"}
+        unless ignoring(key, value) kube_node_spec_taint{job="kube-state-metrics",key=~"ToBeDeletedByClusterAutoscaler|cloud.google.com/impending-node-termination|aws-node-termination-handler/spot-itn"})
+        == 1
+      for: 120s
+      labels:
+        severity: critical
+        type: moogsoft
+    - alert: NodeFilesystemAlmostOutOfSpace
+      annotations:
+        description: Filesystem on {{ $labels.device }} at {{ $labels.instance }}
+          has only {{ printf "%.2f" $value }}% available space left.
+        summary: Filesystem has less than 3% space left.
+      expr: (node_filesystem_avail_bytes{fstype!="",job="node-exporter"} / node_filesystem_size_bytes{fstype!="",job="node-exporter"}
+        * 100 < 3 and node_filesystem_readonly{fstype!="",job="node-exporter"} ==
+        0)
+      for: 120s
+      labels:
+        severity: critical
+        type: moogsoft
+    - alert: HostOutOfMemory
+      annotations:
+        description: '"Node memory is filling up (< 10% left)\n  VALUE = {{ $value
+          }}\n  LABELS = {{ $labels }}"'
+        summary: Host out of memory (instance {{ $labels.instance }})
+      expr: node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes * 100 < 10
+      for: 60s
+      labels:
+        severity: critical
+        type: moogsoft
+    - alert: KubeContainerWaiting
+      annotations:
+        description: Pod {{ $labels.pod }} in {{ $labels.namespace }} namespace has
+          been in waiting state for longer than 5 Minutes.
+        runbook_url: http://sparancher.aa.com
+        summary: Pod in waiting state
+      expr: sum by(namespace, pod, container) (kube_pod_container_status_waiting_reason{job="kube-state-metrics",namespace=~".*"})
+        > 0
+      for: 300s
+      labels:
+        severity: critical
+        type: moogsoft
